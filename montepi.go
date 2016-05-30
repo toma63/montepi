@@ -19,18 +19,18 @@ type monteCount struct {
 // compute pi via Monte Carlo
 // count hits inside the circle embedded in a square
 // accumulate results for runtime minutes
-func MontePiWorker(cntCh chan monteCount, runtime int) {
+func montePiWorker(cntCh chan monteCount, runtime int) {
 
 	now := time.Now()
 
 	// initialize random number generator
-	r := rand.New(now.UnixNano())
+	r := rand.New(rand.NewSource(now.UnixNano()))
 
 	cnt := monteCount{0, 0}
 	// loop taking points until time is up
-	for time.Since(now) < (runtime * time.Minute) {
+	for time.Since(now) < (time.Duration(runtime) * time.Minute) {
 		xr := r.Float64() // 0 < xr < 1
-		yr := r.float64()
+		yr := r.Float64()
 
 		// edist from origin.  In the circle?
 		r := math.Sqrt(xr * xr + yr * yr)
@@ -47,7 +47,7 @@ func MontePiWorker(cntCh chan monteCount, runtime int) {
 // comnpute pi using the Monte Carlo method
 //   cores specifies the number of parallel workers
 //   runtime specifies the run time in minutes
-func montePi(cores int, runtime int) big.Rat {
+func montePi(cores int, runtime int) *big.Rat {
 
 	cntCh := make(chan monteCount, cores)
 
@@ -57,17 +57,17 @@ func montePi(cores int, runtime int) big.Rat {
 	}
 	
 	// drain the channel
-	inside := new(int64)
-	outside := new(int64)
+	var inside int64 = 0
+	var outside int64 = 0
 	res := monteCount{0, 0}
 	for i := 0 ; i < cores ; i++ {
-		res <- cntCh
+		res = <- cntCh
 		inside += res.inside
 		outside += res.outside
 	}
 
-	res = big.newRat(inside, outside)
-	return res
+	ratio := big.NewRat(inside, outside)
+	return ratio
 }
 
 // main function
@@ -76,10 +76,11 @@ func main() {
 	// command line args
 	runtime := flag.Int("runtime", 1, "run time in minutes")
 	cores := flag.Int("cores", 2, "number of cores")
+	digits := flag.Int("digits", 30, "number of digits to print")
 	flag.Parse()
 
 	// compute pi
-	pi := montePi(*runtime, *cores)
+	pi := montePi(*cores, *runtime)
 	
-	fmt.Printf("Value of pin using %d cores for %d minutes is %f\n", *cores, *runtime, pi)
+	fmt.Printf("Value of pin using %d cores for %d minutes is %s\n", *cores, *runtime, pi.FloatString(*digits))
 }
