@@ -34,7 +34,7 @@ func montePiWorker(cntCh chan monteCount, runtime int) {
 
 		// edist from origin.  In the circle?
 		r := math.Sqrt(xr * xr + yr * yr)
-		if r < 1.0 {
+		if r <= 1.0 {
 			cnt.inside++
 		} else {
 			cnt.outside++
