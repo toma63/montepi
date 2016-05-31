@@ -85,5 +85,5 @@ func main() {
 	// compute pi
 	pi := montePi(*cores, *runtime)
 	
-	fmt.Printf("Value of pin using %d cores for %d minutes is %s\n", *cores, *runtime, pi.FloatString(*digits))
+	fmt.Printf("Value of pi using %d cores for %d minutes is %s\n", *cores, *runtime, pi.FloatString(*digits))
 }
