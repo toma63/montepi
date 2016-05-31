@@ -66,8 +66,11 @@ func montePi(cores int, runtime int) *big.Rat {
 		outside += res.outside
 	}
 
-	ratio := big.NewRat(inside, outside)
-	return ratio
+	ratio := big.NewRat(outside, inside)
+	one := big.NewRat(1, 1)
+	four := big.NewRat(4, 1)
+	pi := four.Quo(four, ratio.Add(ratio, one))
+	return pi
 }
 
 // main function
