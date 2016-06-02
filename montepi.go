@@ -11,7 +11,7 @@ import ("fmt"
 
 type monteCount struct {
 	inside int64
-	outside int64
+	total int64
 }
 
 
@@ -34,10 +34,9 @@ func montePiWorker(cntCh chan monteCount, runtime int) {
 
 		// edist from origin.  In the circle?
 		r := math.Sqrt(xr * xr + yr * yr)
+		cnt.total++
 		if r <= 1.0 {
 			cnt.inside++
-		} else {
-			cnt.outside++
 		}
 	}
 	cntCh <- cnt
@@ -47,7 +46,7 @@ func montePiWorker(cntCh chan monteCount, runtime int) {
 // comnpute pi using the Monte Carlo method
 //   cores specifies the number of parallel workers
 //   runtime specifies the run time in minutes
-func montePi(cores int, runtime int) *big.Rat {
+func montePi(cores int, runtime int) (*big.Rat, int64) {
 
 	cntCh := make(chan monteCount, cores)
 
@@ -58,19 +57,18 @@ func montePi(cores int, runtime int) *big.Rat {
 	
 	// drain the channel
 	var inside int64 = 0
-	var outside int64 = 0
+	var total int64 = 0
 	res := monteCount{0, 0}
 	for i := 0 ; i < cores ; i++ {
 		res = <- cntCh
 		inside += res.inside
-		outside += res.outside
+		total += res.total
 	}
 
-	ratio := big.NewRat(outside, inside)
-	one := big.NewRat(1, 1)
+	ratio := big.NewRat(inside, total)
 	four := big.NewRat(4, 1)
-	pi := four.Quo(four, ratio.Add(ratio, one))
-	return pi
+	pi := four.Mul(four, ratio)
+	return pi, total
 }
 
 // main function
@@ -83,7 +81,8 @@ func main() {
 	flag.Parse()
 
 	// compute pi
-	pi := montePi(*cores, *runtime)
+	pi, total := montePi(*cores, *runtime)
 	
 	fmt.Printf("Value of pi using %d cores for %d minutes is %s\n", *cores, *runtime, pi.FloatString(*digits))
+	fmt.Printf("total points processed: %d\n", total)
 }
